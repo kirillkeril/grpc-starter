@@ -1,21 +1,18 @@
 // Примерно так вижу схему для grpc
 export default {
-    name: 'test',
+    name: 'Greeter',
     version: '0.0.1',
     rpc: {
-        proto: './proto/test.proto',
-        services: {
-            Greeter: {
-                SayHi: (ctx: any) => {
-                    ctx.res = {greeting: 'name'}
-                },
-                SayHello: (ctx: any) => {
-                }
-            },
-            Worker: {
-                DoWork: (ctx: any) => {
-                }
-            }
+        "unary:SayHi": (ctx: any) => {
+            ctx.res = {greeting: 'name'}
+        },
+        "duplex:SayHello": (ctx: any) => {
+            ctx.req.on('data', d => {
+                ctx.res.write({greeting: 'test'});
+            })
+            ctx.req.on('end', d => {
+                ctx.res.end();
+            })
         }
     }
 }

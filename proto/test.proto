@@ -2,7 +2,7 @@ syntax = "proto3";
 
 service Greeter {
   rpc SayHi(SayHiRequest) returns (SayHiResponse);
-  rpc SayHello(SayHiRequest) returns (SayHiResponse);
+  rpc SayHello(stream SayHiRequest) returns (SayHiResponse);
 }
 
 service Worker {

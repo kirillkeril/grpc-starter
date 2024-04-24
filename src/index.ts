@@ -1,7 +1,8 @@
 import Mali from "mali-fork";
 import {main} from "../client.ts";
+import path from "node:path";
 // WAGNING - ТЕСТОВАЯ ВЕРСИЯ ТОЛЬКО ДЛЯ ДЕМОНСТРАЦИИ
-export const startGRPCFromSchema = async () => {
+export const startGRPCFromSchema = async (proto: string, grpcEndpoint: string) => {
     let mod: any;
     try {
         mod = await import('../server.ts')
@@ -9,32 +10,31 @@ export const startGRPCFromSchema = async () => {
         if (!mod.default) {
             process.exit(1);
         }
-        if (!mod.default.rpc || !mod.default.rpc.proto) {
+        if (!mod.default.rpc || !mod.default.rpc) {
             process.exit(1);
         }
-        if (!mod.default.rpc.services) {
-            process.exit(1);
-        }
+        const serviceName = mod.default.name;
 
         // load proto file and create app
-        const protoPath = mod.default.rpc.proto
-        const app = new Mali(protoPath);
+        const app = new Mali(path.resolve(proto), serviceName);
 
-        let service: string;
-        for (const [serviceName, RPCs] of Object.entries(mod.default.rpc.services)) {
-            service = serviceName;
-            for (const [rpc, handler] of Object.entries(RPCs)) {
-                app.use(service, rpc, handler);
-            }
+        for (const [rpc, handler] of Object.entries(mod.default.rpc)) {
+            const [type, name] = rpc.split(':');
+            console.log(`registered ${name} (${type}) rpc in ${serviceName} service`);
+            app.use(serviceName, name, handler);
         }
-        app.start('127.0.0.1:50051').then(() => {
-            console.log('gRPC server started');
+        app.start(grpcEndpoint).then(() => {
+            console.log(`gRPC server started on ${grpcEndpoint}`);
         })
     } catch (e) {
         console.log(e)
+        throw e
     }
 }
 
-startGRPCFromSchema().then(() => {
+startGRPCFromSchema('proto/test.proto', '127.0.0.1:50051').then(() => {
     main();
+}).catch(e => {
+    console.log(e)
+    process.exit(1)
 });
